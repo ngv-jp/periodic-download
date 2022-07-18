@@ -133,7 +133,7 @@ Usage:
 Options:
   url           Download URL
   converter     HTTP Response Header Converter
-  last-modified paContent last modified store path
+  last-modified Content last modified store path
 EOT
   exit 1
 fi
