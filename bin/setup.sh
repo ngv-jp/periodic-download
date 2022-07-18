@@ -1,10 +1,17 @@
 #!/bin/sh
 # Copyright (c) 2022 RFull Development
 # This source code is managed under the MIT license. See LICENSE in the project root.
+SHELL_PATH="$0"
+SHELL_DIR=`dirname "$0"`
+PATH=$PATH:$SHELL_DIR
+
+cd "$SHELL_DIR"
+. ./log.sh
+
 load_params() {
   local OPTS REQUIRE_OPTS TEMP
 
-  # オプションを解析
+  # Option analysis
   OPTS=`getopt -o c: -l converter: -- "$@"`
   if [ $? -ne 0 ]; then
     return 1
@@ -26,13 +33,13 @@ load_params() {
     esac
   done
 
-  # オプション確認
-  if [ -z $HTTP_HEADER_CONV ]; then
+  # Option validation
+  if [ -z "$HTTP_HEADER_CONV" ]; then
     TEMP="$REQUIRE_OPTS --converter"
     REQUIRE_OPTS="$TEMP"
   fi
   if [ -n "$REQUIRE_OPTS" ]; then
-    echo "Require options:\n $REQUIRE_OPTS"
+    log_error "Require option(s):\n $REQUIRE_OPTS"
     return 1
   fi
   return 0
@@ -54,7 +61,7 @@ build_converter() {
   return 0
 }
 
-make_link() {
+make_converter_link() {
   ln -s ../converter/header "$1"
   if [ $? -ne 0 ]; then
     return 1
@@ -64,33 +71,34 @@ make_link() {
 
 load_params "$@"
 if  [ $? -ne 0 ]; then
-  cat << EOT
+  USAGE=`cat << EOT
 Usage:
-  setup.sh <--converter Converter>
+  $SHELL_PATH <--converter Converter>
 Options:
   converter HTTP Response Header Converter
-EOT
+EOT`
+  log_error "$USAGE"
   exit 1
 fi
 if [ -e "$HTTP_HEADER_CONV" ]; then
   exit 0
 fi
 
-# サブモジュール初期化
 init_submodule
 if [ $? -ne 0 ]; then
+  log_error "Git submodule initialize failed."
   exit 1
 fi
 
-# ビルド
 build_converter
 if [ $? -ne 0 ]; then
+  log_error "Converter build failed."
   exit 1
 fi
 
-# リンク
-make_link "$HTTP_HEADER_CONV"
+make_converter_link "$HTTP_HEADER_CONV"
 if [ $? -ne 0 ]; then
+  log_error "Unable to create link."
   exit 1
 fi
 exit 0
