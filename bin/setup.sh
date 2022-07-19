@@ -1,6 +1,7 @@
 #!/bin/sh
 # Copyright (c) 2022 RFull Development
 # This source code is managed under the MIT license. See LICENSE in the project root.
+OS_NAME=`uname`
 SHELL_PATH="$0"
 SHELL_DIR=`dirname "$0"`
 PATH=$PATH:$SHELL_DIR
@@ -12,19 +13,24 @@ load_params() {
   local OPTS REQUIRE_OPTS TEMP
 
   # Option analysis
-  OPTS=`getopt -o c: -l converter: -- "$@"`
+  # Long option only supports Linux.
+  if [ "$OS_NAME" = 'Linux' ]; then
+    OPTS=`getopt -o c: -l converter: -- "$@"`
+  else
+    OPTS=`getopt c: "$@"`
+  fi
   if [ $? -ne 0 ]; then
     return 1
   fi
   eval set -- "$OPTS"
-  while true; do
+  while :; do
     case "$1" in
-      '-c' | '--converter')
+      -c|--converter)
         HTTP_HEADER_CONV="$2"
         shift 2
         continue
         ;;
-      '--')
+      --)
         shift
         break
         ;;
@@ -39,7 +45,8 @@ load_params() {
     REQUIRE_OPTS="$TEMP"
   fi
   if [ -n "$REQUIRE_OPTS" ]; then
-    log_error "Require option(s):\n $REQUIRE_OPTS"
+    log_error "Require options:"
+    log_error "$REQUIRE_OPTS"
     return 1
   fi
   return 0
